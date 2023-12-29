@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <contextName>gateway</contextName>
+  <conversionRule conversionWord="log" converterClass="ch.qos.logback.classic.pattern.LoggerConverter"/>
+  <springProperty scope="context" name="app.name" source="spring.application.name" defaultValue="eureka"/>
+  <springProperty scope="context" name="log.path" source="logging.file.path" defaultValue="./"/>
+  <include resource="org/springframework/boot/logging/logback/default.xml"/>
+  <property name="log.charset" value="utf-8"/>
+  <property name="log.pattern" value="%red(%d{yyyy-MM-dd HH:mm:ss.SSS}) %green([%contextName %-5level]) %boldMagenta(%logger{36}) - %msg%n"/>
+  <property name="log.maxHistory" value="30"/>
+  <property name="log.maxFileSize" value="100MB"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${log.pattern}</pattern>
+      <charset>${log.charset}</charset>
+    </encoder>
+  </appender>
+
+  <appender name="FILE_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <encoder>
+      <pattern>${log.pattern}</pattern>
+      <charset>${log.charset}</charset>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${log.path}/%d{yyyy-MM,AUX}/%d{yyyy-MM-dd}/${app.name}-%i.log.zip</fileNamePattern>
+      <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+        <maxFileSize>${log.maxFileSize}</maxFileSize>
+      </timeBasedFileNamingAndTriggeringPolicy>
+      <maxHistory>${log.maxHistory}</maxHistory>
+    </rollingPolicy>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>debug</level>
+    </filter>
+  </appender>
+
+  <appender name="CONSOLE_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>1024</queueSize>
+    <maxFlushTime>1000</maxFlushTime>
+    <appender-ref ref="CONSOLE"/>
+  </appender>
+  <appender name="FILE_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>1024</queueSize>
+    <maxFlushTime>1000</maxFlushTime>
+    <appender-ref ref="FILE_LOG"/>
+  </appender>
+
+  <springProfile name="develop">
+    <root level="ERROR">
+      <appender-ref ref="CONSOLE_ASYNC"/>
+      <appender-ref ref="FILE_ASYNC"/>
+    </root>
+    <logger name="com.xdf" level="DEBUG" additivity="false">
+      <appender-ref ref="CONSOLE_ASYNC"/>
+      <appender-ref ref="FILE_ASYNC"/>
+    </logger>
+    <logger name="reactor.netty.http.server.AccessLog" level="INFO" additivity="false">
+      <appender-ref ref="CONSOLE_ASYNC"/>
+      <appender-ref ref="FILE_ASYNC"/>
+    </logger>
+  </springProfile>
+
+  <springProfile name="test">
+    <root level="ERROR">
+      <appender-ref ref="FILE_ASYNC"/>
+    </root>
+    <logger name="com.xdf" level="DEBUG" additivity="false">
+      <appender-ref ref="FILE_ASYNC"/>
+    </logger>
+    <logger name="reactor.netty.http.server.AccessLog" level="INFO" additivity="false">
+      <appender-ref ref="FILE_ASYNC"/>
+    </logger>
+  </springProfile>
+
+</configuration>
